@@ -5,13 +5,43 @@ class HangpersonGame
 
   # Get a word from remote "random word" service
 
-  # def initialize()
-  # end
-  
+  LETTER_PLACEHOLDER = '-' 
+  MAX_GUESSES = 7 
+  attr_reader :word 
+  attr_reader :guesses 
+  attr_reader :wrong_guesses 
+  attr_reader :word_with_guesses 
   def initialize(word)
-    @word = word
+     start_new_game(word)
   end
-
+  public 
+  def guess(letter) 
+    raise ArgumentError, "Argument is not a letter" unless letter =~ /[a-zA-Z]/  
+    raise RuntimeError, "Game has already ended" unless check_win_or_lose == :play 
+     
+    guess = letter.downcase 
+ 
+    return false unless is_new_guess?(guess) 
+     
+    if is_correct_guess?(guess) 
+      register_correct_guess(guess) 
+      update_word_with_guesses 
+    else 
+      register_wrong_guess(guess) 
+    end 
+    return true 
+  end 
+   
+  def check_win_or_lose 
+    if reached_max_guesses? 
+      :lose 
+    elsif guessed_complete_word? 
+      :win 
+    else 
+      :play 
+    end 
+  end 
+  
   # You can test it by running $ bundle exec irb -I. -r app.rb
   # And then in the irb: irb(main):001:0> HangpersonGame.get_random_word
   #  => "cooking"   <-- some random word
@@ -24,4 +54,51 @@ class HangpersonGame
     }
   end
 
+  private 
+  def start_new_game(word) 
+    @word = word 
+    @guesses = '' 
+    @wrong_guesses = '' 
+    @wrong_guess_count = 0 
+     
+    update_word_with_guesses 
+  end 
+   
+  def is_new_guess?(guess) 
+    !@guesses.include?(guess) && !@wrong_guesses.include?(guess) 
+  end 
+   
+  def is_correct_guess?(guess) 
+    @word.downcase.include?(guess) 
+  end 
+ 
+  def register_correct_guess(guess) 
+    return if @guesses.include?(guess) 
+    @guesses << guess 
+  end 
+   
+  def update_word_with_guesses 
+    @word_with_guesses = '' 
+    @word.each_char do |letter| 
+      if @guesses.include?(letter) 
+        @word_with_guesses << letter 
+      else 
+        @word_with_guesses << LETTER_PLACEHOLDER 
+      end 
+    end 
+  end 
+ 
+  def register_wrong_guess(guess) 
+    return if @wrong_guesses.include?(guess) 
+    @wrong_guesses << guess 
+    @wrong_guess_count = @wrong_guess_count + 1 
+  end 
+   
+  def guessed_complete_word? 
+    !reached_max_guesses? && !@word_with_guesses.include?(LETTER_PLACEHOLDER) 
+  end 
+   
+  def reached_max_guesses? 
+    @wrong_guess_count >= MAX_GUESSES 
+  end 
 end
